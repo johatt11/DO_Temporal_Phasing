@@ -12,10 +12,10 @@ from transition_characterization_flat import combined_transition_flat
 '''Create Figure 1, showing the improvement resulting from our 
 updated version of the method.'''
 
-fig, axs = pplt.subplots(
-        nrows=2, ncols=3, figsize=(12,7),
-        share=False, includepanels=True
-)
+fig = pplt.figure(figsize=(12,7),
+        share=False, includepanels=True)
+
+axs = fig.add_subplots(nrows=2, ncols=3)
 
 fig.format(
         fontsize=14,
@@ -78,8 +78,9 @@ for i in range(3):
     reduced_time = time
 
     ax = axs[1,i]
-    ax.format(xlabel = xlabel, ylabel = ylabel, xticks=xticks, yticks = yticks)
-    px = ax.panel_axes("b", width='3em', share=True, fontsize=14)
+    ax.format(xlabel = xlabel, ylabel = ylabel, xticks=xticks, yticks = yticks, fontsize=14)
+    px = ax.panel_axes("b", width='3em', share=True)
+    px.format(fontsize=14)
 
     ax.plot(reduced_time, trans, lw=0.5)
     ax.plot(reduced_time, p50, color='k', lw=1.2,
@@ -132,7 +133,8 @@ for i in range(3):
 
     ax = axs[0,i]
     ax.format(ylabel = ylabel, xticks = xticks, yticks = yticks, title = title)
-    px = ax.panel_axes("b", width='3em', share=True, fontsize=14)
+    px = ax.panel_axes("b", width='3em', share=True)
+    px.format(fontsize=14)
 
     ax.plot(time, trans, lw=0.5)
     ax.plot(time, p50, color='k', lw=1.2,
@@ -152,9 +154,9 @@ fig.save('Figures/Figure_1')
 '''Create Figure 2, highlighting the key parameters that
 lead to bias in the ramp fitting method.'''
 
-fig, axs = pplt.subplots(share=False, figsize=(12,5), fontsize=16,
-        nrows=1, ncols=2, wratios=(2, 1), includepanels=True)
-fig.format(
+fig = pplt.figure(share=False, figsize=(12,5), includepanels=True)
+axs = fig.add_subplots(nrows=1, ncols=2, wratios=(2, 1))
+fig.format(fontsize=16, 
     abc=True, abcloc='ul', titleloc='uc', titleabove=False)
 
 
@@ -242,8 +244,10 @@ d = {'time': time, 'sigma': sigma, 'tau': tau}
 double_tau_df = pd.DataFrame(data=d)
 
 
-fig, axs = pplt.subplots(ncols=4, nrows=2, refwidth=4, fontsize=18, share=False)
-fig.format(abc=True, abcloc='ul')
+fig = pplt.figure(refwidth=4, share=False)
+axs = fig.add_subplots(ncols=4, nrows=2)
+fig.format(abc=True, abcloc='ul', fontsize=18)
+axs.format(fontsize=18)
 
 double_GIS_df['sig_GIS'] = double_GIS_df['sigma'] + double_GIS_df['GIS_slope']
 double_GS_df['sig_GS'] = double_GS_df['sigma'] + double_GS_df['GS_slope']
@@ -270,7 +274,7 @@ sigma_tau_mean = np.empty((10,10))
 for i in range(100):
     sigma_tau_mean[i%10,int(i/10)] = double_tau_df.groupby('sig_tau').mean()['time'].values[i]
 
-contour_levs = [11,7,4,2,1,0,-1,-2,-4,-7,-11]
+contour_levs = [-11,-7,-4,-2,-1,0,1,2,4,7,11]
 
 cmap1 = pplt.Colormap('RdBu_r')
 
@@ -411,7 +415,7 @@ for i in range(5):
     axs[7].scatter(var_sigma[i], var_duration[i], edgecolor='white', color='black', s=200, marker=markers[i])
 
 
-fig.legend(loc='bottom',fontsize=18,ncols=5)
+fig.legend(loc='bottom',fontsize=18,ncols=5, mode='expand')
 
 fig.save('Figures/Figure_3')
 
@@ -446,7 +450,9 @@ for m, var in enumerate(vars):
             sample[l] = samples[rng.integers(low=0, high=2000),l] #sampling randomly from the distribution of each individual time lag
         lags[m,k] = np.mean(sample) #taking the sample mean
 
-fig, ax = pplt.subplot(figsize=(8,4),ylabel='Sample Mean Time Lag / Years',fontsize=14,)
+fig = pplt.figure(figsize=(8,4),)
+ax = fig.add_subplot(ylabel='Sample Mean Time Lag / Years')
+fig.format(fontsize=14,)
 
 d = {'Precipitation': lags[0,:], 'Sea Ice': lags[1,:], 'AMOC': lags[2,:], 'NAO': lags[3,:]}
 lags_df = pd.DataFrame(data=d)
@@ -501,7 +507,9 @@ for m, var in enumerate(vars):
             sample[l] = samples[rng.integers(low=0, high=2000),l]
         lags[m,k] = np.mean(sample)
 
-fig, ax = pplt.subplot(figsize=(8,4),ylabel='Sample Mean Time Lag / Years',fontsize=14,)
+fig = pplt.figure(figsize=(8,4),)
+ax = fig.add_subplot(ylabel='Sample Mean Time Lag / Years')
+fig.format(fontsize=14,)
 
 d = {'Na': lags[0,:], 'dO18': lags[1,:], 'Thickness': lags[2,:]}
 lags_df = pd.DataFrame(data=d)
@@ -585,7 +593,8 @@ for k in range(100000):
 pval = np.sum(np.abs(obs-np.mean(null))<np.abs(null-np.mean(null)))/(100000)
 
 
-fig, ax = pplt.subplot(figsize=(10,6),xlabel='Sample Mean Time Lag / Years', fontsize=16, ylabel = 'Probability Density')
+fig = pplt.figure(figsize=(10,6), fontsize=16)
+ax = fig.add_subplot(xlabel='Sample Mean Time Lag / Years', ylabel = 'Probability Density', fontsize=16)
 
 kde = gaussian_kde(obs)
 ax.plot(np.arange(-30,8,0.01),kde.evaluate(np.arange(-30,8,0.01)), label = 'Observed')
@@ -597,5 +606,5 @@ thresholds = np.quantile(null,(0.025,0.975))
 ax.axvline(thresholds[0],linestyle='--',color='black',label='Significance Thresholds')
 ax.axvline(thresholds[1],linestyle='--',color='black')
 
-fig.legend(loc='bottom', fontsize = 16)
+fig.legend(loc='bottom', fontsize=16, mode='expand')
 fig.save('Figures/Figure_B1')

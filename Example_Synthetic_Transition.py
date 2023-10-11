@@ -24,7 +24,7 @@ dy = 1.0 #Magnitude of Transition
 GS_slope = 5e-4 #Slope during stadial preceding transition in years^-1
 GIS_slope = -1e-3 #Slope during interstadial following transition in years^-1
 sigma = 0.1 #Variance of AR1 noise
-tau = 1.0 #Autocorrelation time of AR1 noise
+tau = 1.0 #Autocorrelation time of AR1 noise in years
 
 alpha = np.exp(-delta/tau)
 time = np.arange(800,step=delta,dtype='float')
@@ -45,7 +45,8 @@ print('Using least squares fit, estimated transition onset time is year \
 '+str(popt[0])+'  and estimated \
 transition duration is '+str(np.exp(popt[1]))+' years.')
 
-fig, ax = pplt.subplot(figsize=(10,6))
+fig = pplt.figure(figsize=(10,6))
+ax = fig.add_subplot()
 ax.plot(time, synt_trans, color='C0', label='synthetic transition')
 ax.plot(time, cntrl, color='C1', label='rmse fit')
 ax.axvline(popt[0], color='k', lw=0.5)
@@ -66,8 +67,8 @@ print('Using Bayesian fit, mean estimated transition onset time is year \
 '+str(np.mean(traces['t0']))+'  and mean estimated \
 transition duration is '+str(np.mean(traces['dt']))+' years.')
 
-fig, ax = pplt.subplot(figsize=(10,6),
-        share=False, includepanels=True)
+fig = pplt.figure(figsize=(10,6))
+ax = fig.add_subplot()
 
 fig.format(xlabel='Year', fontsize=16,
     suptitle='Bayesian Fit to Synthetic Transition Data',

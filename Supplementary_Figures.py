@@ -24,7 +24,8 @@ duration = np.empty(1000)
 for i in range(1000):
     duration[i] = 10.0 + 10.0 * (i%10)
 
-fig, axs = pplt.subplots(figsize=(10,12),nrows=4,ncols=1,sharey=True, sharex=False)
+fig = pplt.figure(figsize=(10,12), sharey=True, sharex=False)
+axs = fig.add_subplots(nrows=4, ncols=1)
 fig.format(fontsize=16, abc=True, abcloc='ul')
 axs.format(ylim=(-18,8),)
 
@@ -156,7 +157,8 @@ duration = np.empty(1000)
 for i in range(1000):
     duration[i] = 10.0 + 10.0 * (i%10)
 
-fig, axs = pplt.subplots(figsize=(10,12),nrows=4,ncols=1,sharey=True, sharex=False)
+fig = pplt.figure(figsize=(10,12), sharey=True, sharex=False)
+axs = fig.add_subplots(nrows=4, ncols=1)
 fig.format(fontsize=16)
 axs.format(ylim=(-32,3),)
 
@@ -246,7 +248,8 @@ duration = np.empty(1000)
 for i in range(1000):
     duration[i] = 10.0 + 10.0 * (i%10)
 
-fig, axs = pplt.subplots(figsize=(10,12),nrows=4,ncols=1,sharey=True, sharex=False)
+fig = pplt.figure(figsize=(10,12), sharey=True, sharex=False)
+axs = fig.add_subplots(nrows=4, ncols=1)
 fig.format(fontsize=16)
 axs.format(ylim=(-28,12),)
 
@@ -328,7 +331,8 @@ duration = np.empty(1000)
 for i in range(1000):
     duration[i] = 10.0 + 10.0 * (i%10)
 
-fig, axs = pplt.subplots(figsize=(10,12),nrows=4,ncols=1,sharey=True, sharex=False)
+fig = pplt.figure(figsize=(10,12), sharey=True, sharex=False)
+axs = fig.add_subplots(nrows=4, ncols=1)
 fig.format(fontsize=16, abc=True, abcloc='ul')
 axs.format(ylim=(-16,16),)
 
@@ -382,7 +386,8 @@ low_tau = np.load('Data/low_tau_99.npy')
 dec_low_tau = np.load('Data/dec_low_tau_99.npy')
 high_both = np.load('Data/high_both_99.npy')
 dec_high_both = np.load('Data/dec_high_both_99.npy')
-fig, axs = pplt.subplots(nrows=2, ncols=1, figsize=(10,8))
+fig = pplt.figure(figsize=(10,8))
+axs = fig.add_subplots(nrows=2, ncols=1)
 fig.format(fontsize=16)
 axs[0].plot(range(800),low_tau)
 axs[0].plot(np.arange(800,step=10),dec_low_tau,lw=3)
@@ -408,7 +413,8 @@ fig.save('Supplementary_Figures/Figure_C6')
 '''Create Fig. C7, showing the bias due to
 separate stadial and interstadial noise regimes.'''
 
-fig, axs = pplt.subplots(figsize=(10,8),nrows=2,ncols=1,sharey=True, sharex=False)
+fig = pplt.figure(figsize=(10,8), sharey=True, sharex=False)
+axs = fig.add_subplots(nrows=2,ncols=1)
 fig.format(fontsize=16)
 axs.format(ylim=(-14,-1))
 
