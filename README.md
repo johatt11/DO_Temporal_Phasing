@@ -18,3 +18,5 @@ The full NGRIP data used in this study can be found at https://doi.org/10.1594/P
 The full CCSM4 data used in this study can be found at https://sid.erda.dk/cgi-sid/ls.py?share_id=Fo2F7YWBmv and were published alongside Vettoretti et al. (2022, https://doi.org/10.1038/s41561-022-00920-7)
 
 If using either of these data-sets, please cite the researchers who produced them. If using the original implementation of the ramp fitting method, please cite Erhardt et al. If using the updated implementation, please cite both Erhardt et al. and Slattery et al.
+
+Required packages: numpy, scipy, pandas, proplot, emcee
