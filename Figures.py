@@ -4,13 +4,13 @@ import proplot as pplt
 import os
 from scipy.stats import gaussian_kde
 import sys
-sys.path.append(os.path.join(sys.path[0],'Updated_Method'))
+sys.path.append(os.path.join(sys.path[0],'Extended_Method'))
 from transition_characterization import combined_transition
 sys.path.append(os.path.join(sys.path[0],'Original_Method'))
 from transition_characterization_flat import combined_transition_flat
 
 '''Create Figure 1, showing the improvement resulting from our 
-updated version of the method.'''
+extended implementation of the method.'''
 
 fig = pplt.figure(figsize=(12,7),
         share=False, includepanels=True)
@@ -198,148 +198,50 @@ fig.save('Figures/Figure_2')
 
 '''Create Figure 3, showing the bias due to the different parameters.'''
 
-'''Bias Interaction Plots With 100 realizations of the
-synthetic transition for each combination of parameters.'''
+gs = pplt.GridSpec(nrows=4, ncols=4, hpad=4)
+fig = pplt.figure(refheight=4, share=False, fontsize=18)
+contour_levs = [11,7,4,2,1,0,-1,-2,-4,-7,-11]
+cmap1 = pplt.Colormap('RdBu_r')
 
-#Decadal Data
+
+#Original Method, Annual Resolution
 sigma = np.empty(10000)
 tau = np.empty(10000)
 GS_slope = np.empty(10000)
 GIS_slope = np.empty(10000)
 duration = np.empty(10000)
-
 for i in range(10000):
-    sigma[i] = 0.02 + 0.02 * (i%10)
-    tau[i] = 3.0 + 3.0 * int((i%100)/10)
+    sigma[i] = 0.05 + 0.05 * (i%10)
+    tau[i] = 0.5 + 0.5 * int((i%100)/10)
     GS_slope[i] = -1.8e-3 + 4e-4 * int((i%100)/10)
     GIS_slope[i] = 0.0 - 3e-4 * int((i%100)/10)
     duration[i] = 10.0 + 10.0 * int((i%100)/10)
 
-df = pd.read_pickle('Data/decadal_synthetics/double_GS_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
+df = pd.read_pickle('Data/annual_synthetics/Original_Method/double_GS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
 d = {'time': time, 'sigma': sigma, 'GS_slope': GS_slope}
 double_GS_df = pd.DataFrame(data=d)
 
-df = pd.read_pickle('Data/decadal_synthetics/double_GIS_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
+df = pd.read_pickle('Data/annual_synthetics/Original_Method/double_GIS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
 d = {'time': time, 'sigma': sigma, 'GIS_slope': GIS_slope}
 double_GIS_df = pd.DataFrame(data=d)
 
-df = pd.read_pickle('Data/decadal_synthetics/double_dur_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
+df = pd.read_pickle('Data/annual_synthetics/Original_Method/double_dur_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
 d = {'time': time, 'sigma': sigma, 'duration': duration}
 double_dur_df = pd.DataFrame(data=d)
 
-df = pd.read_pickle('Data/decadal_synthetics/double_tau_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
-d = {'time': time, 'sigma': sigma, 'tau': tau}
-double_tau_df = pd.DataFrame(data=d)
-
-
-fig = pplt.figure(refwidth=4, share=False)
-axs = fig.add_subplots(ncols=4, nrows=2)
-fig.format(abc=True, abcloc='ul', fontsize=18)
-axs.format(fontsize=18)
-
-double_GIS_df['sig_GIS'] = double_GIS_df['sigma'] + double_GIS_df['GIS_slope']
-double_GS_df['sig_GS'] = double_GS_df['sigma'] + double_GS_df['GS_slope']
-double_dur_df['sig_dur'] = double_dur_df['sigma'] + double_dur_df['duration']
-double_tau_df['sig_tau'] = double_tau_df['sigma'] + double_tau_df['tau']
-
-sigma_GIS_mean = np.empty((10,10))
-
-for i in range(100):
-    sigma_GIS_mean[i%10,int(i/10)] = double_GIS_df.groupby('sig_GIS').mean()['time'].values[i]
-
-sigma_GS_mean = np.empty((10,10))
-
-for i in range(100):
-    sigma_GS_mean[i%10,int(i/10)] = double_GS_df.groupby('sig_GS').mean()['time'].values[i]
-
-sigma_dur_mean = np.empty((10,10))
-
-for i in range(100):
-    sigma_dur_mean[i%10,int(i/10)] = double_dur_df.groupby('sig_dur').mean()['time'].values[i]
-
-sigma_tau_mean = np.empty((10,10))
-
-for i in range(100):
-    sigma_tau_mean[i%10,int(i/10)] = double_tau_df.groupby('sig_tau').mean()['time'].values[i]
-
-contour_levs = [-11,-7,-4,-2,-1,0,1,2,4,7,11]
-
-cmap1 = pplt.Colormap('RdBu_r')
-
-axs[4].format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=tau[np.arange(10,110,step=20)], 
-             yminorticks=tau[np.arange(100,step=20)])
-dur = axs[4].contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
-                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both')
-
-axs[5].format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=1000*GS_slope[np.arange(10,110,step=20)], 
-              yminorlocator=1000*GS_slope[np.arange(100,step=20)])
-GS = axs[5].contourf(x=sigma[:10], y=1000*GS_slope[np.arange(100,step=10)], cmap=cmap1,
-                       z=sigma_GS_mean,levels=contour_levs, extend='both')
-
-axs[6].format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slope \n / $Kiloyears^{-1}$',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=np.abs(1000*GIS_slope[np.arange(10,110,step=20)]),
-              yminorlocator=0.3)
-slope = axs[6].contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
-                       z=np.flip(sigma_GIS_mean,axis=0),levels=contour_levs, extend='both')
-
-axs[7].format(xlabel='Noise / Signal', ylabel='Transition Duration / Years',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=duration[np.arange(10,110,step=20)], yminorlocator=10)
-dur = axs[7].contourf(x=sigma[:10], y=duration[np.arange(100,step=10)], cmap=cmap1,
-                       z=np.transpose(sigma_dur_mean),levels=contour_levs, extend='both')
-
-
-colorbar = fig.colorbar(slope, loc='bottom')
-colorbar.ax.tick_params(labelsize=18)
-colorbar.ax.set_title('Bias / Years', fontsize=18)
-
-#Annual data
-
-for i in range(10000):
-    sigma[i] = 0.04 + 0.04 * (i%10)
-    tau[i] = 0.4 + 0.4 * int((i%100)/10)
-    GS_slope[i] = -1.8e-3 + 4e-4 * int((i%100)/10)
-    GIS_slope[i] = 0.0 - 3e-4 * int((i%100)/10)
-    duration[i] = 10.0 + 10.0 * int((i%100)/10)
-
-df = pd.read_pickle('Data/annual_synthetics/double_GS_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
-d = {'time': time, 'sigma': sigma, 'GS_slope': GS_slope}
-double_GS_df = pd.DataFrame(data=d)
-
-df = pd.read_pickle('Data/annual_synthetics/double_GIS_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
-d = {'time': time, 'sigma': sigma, 'GIS_slope': GIS_slope}
-double_GIS_df = pd.DataFrame(data=d)
-
-df = pd.read_pickle('Data/annual_synthetics/double_dur_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
-d = {'time': time, 'sigma': sigma, 'duration': duration}
-double_dur_df = pd.DataFrame(data=d)
-
-df = pd.read_pickle('Data/annual_synthetics/double_tau_pickle')
-df = df.where(df['time']>300,other=np.nan)
-df = df.where(df['time']<450,other=np.nan)
-time = df['time'] - 400
+df = pd.read_pickle('Data/annual_synthetics/Original_Method/double_tau_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
 d = {'time': time, 'sigma': sigma, 'tau': tau}
 double_tau_df = pd.DataFrame(data=d)
 
@@ -368,32 +270,337 @@ sigma_tau_mean = np.empty((10,10))
 for i in range(100):
     sigma_tau_mean[i%10,int(i/10)] = double_tau_df.groupby('sig_tau').mean()['time'].values[i]
 
-cmap1 = pplt.Colormap('RdBu_r')
+ax = fig.subplot(gs[0,:], fontsize=24)
+ax.format(title='Original Method at Annual Resolution', titlepad=15, xticks=[], yticks=[], ec='white', abc=False)
 
-axs[0].format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
-              xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=tau[np.arange(10,110,step=20)], 
+ax1 = fig.subplot(gs[0,0], abc=True, abcloc='ul', number=1, fontsize=18)
+ax1.format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
+              xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)], yticks=tau[np.arange(10,110,step=20)], 
               yminorticks=tau[np.arange(100,step=20)])
-dur = axs[0].contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
-                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both')
+dur = ax1.contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both', inbounds=False)
 
-axs[1].format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=1000*GS_slope[np.arange(10,110,step=20)], 
+ax2 = fig.subplot(gs[0,1], abc=True, abcloc='ul', number=2, fontsize=18)
+ax2.format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)], yticks=1000*GS_slope[np.arange(10,110,step=20)], 
               yminorlocator=1000*GS_slope[np.arange(100,step=20)])
-GS = axs[1].contourf(x=sigma[:10], y=1000*GS_slope[np.arange(100,step=10)], cmap=cmap1,
+GS = ax2.contourf(x=sigma[:10], y=1000*GS_slope[np.arange(100,step=10)], cmap=cmap1,
                        z=sigma_GS_mean,levels=contour_levs, extend='both')
 
-axs[2].format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slope \n / $Kiloyears^{-1}$',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=np.abs(1000*GIS_slope[np.arange(10,110,step=20)]),
+ax3 = fig.subplot(gs[0,2], abc=True, abcloc='ul', number=3, fontsize=18)
+ax3.format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slope \n / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)],
+              yticks=np.abs(1000*GIS_slope[np.arange(10,110,step=20)]),
               yminorlocator=0.3)
-slope = axs[2].contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
+slope = ax3.contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
                        z=np.flip(sigma_GIS_mean,axis=0),levels=contour_levs, extend='both')
 
-axs[3].format(xlabel='Noise / Signal', ylabel='Transition Duration / Years',
-             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=duration[np.arange(10,110,step=20)], yminorlocator=10)
-dur = axs[3].contourf(x=sigma[:10], y=duration[np.arange(100,step=10)], cmap=cmap1,
+ax4 = fig.subplot(gs[0,3], abc=True, abcloc='ul', number=4, fontsize=18)
+ax4.format(xlabel='Noise / Signal', ylabel='Transition Duration / Years',
+             xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)],
+              yticks=duration[np.arange(10,110,step=20)], yminorlocator=10)
+dur = ax4.contourf(x=sigma[:10], y=duration[np.arange(100,step=10)], cmap=cmap1,
                        z=np.transpose(sigma_dur_mean),levels=contour_levs, extend='both')
 
-# decadal: sigma, tau, GS slope, GIS slope, duration
+
+
+#Original Method, Decadal Resolution
+
+sigma = np.empty(10000)
+tau = np.empty(10000)
+GS_slope = np.empty(10000)
+GIS_slope = np.empty(10000)
+duration = np.empty(10000)
+
+for i in range(10000):
+    sigma[i] = 0.02 + 0.02 * (i%10)
+    tau[i] = 3.0 + 3.0 * int((i%100)/10)
+    GS_slope[i] = -1.8e-3 + 4e-4 * int((i%100)/10)
+    GIS_slope[i] = 0.0 - 3e-4 * int((i%100)/10)
+    duration[i] = 10.0 + 10.0 * int((i%100)/10)
+
+df = pd.read_pickle('Data/decadal_synthetics/Original_Method/double_GS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'GS_slope': GS_slope}
+double_GS_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/decadal_synthetics/Original_Method/double_GIS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'GIS_slope': GIS_slope}
+double_GIS_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/decadal_synthetics/Original_Method/double_dur_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'duration': duration}
+double_dur_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('~/Documents/Revised_Phasing/DEC_sensitivity/Data_Original/double_tau_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'tau': tau}
+double_tau_df = pd.DataFrame(data=d)
+
+double_GIS_df['sig_GIS'] = double_GIS_df['sigma'] + double_GIS_df['GIS_slope']
+double_GS_df['sig_GS'] = double_GS_df['sigma'] + double_GS_df['GS_slope']
+double_dur_df['sig_dur'] = double_dur_df['sigma'] + double_dur_df['duration']
+double_tau_df['sig_tau'] = double_tau_df['sigma'] + double_tau_df['tau']
+
+sigma_GIS_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_GIS_mean[i%10,int(i/10)] = double_GIS_df.groupby('sig_GIS').mean()['time'].values[i]
+
+sigma_GS_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_GS_mean[i%10,int(i/10)] = double_GS_df.groupby('sig_GS').mean()['time'].values[i]
+
+sigma_dur_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_dur_mean[i%10,int(i/10)] = double_dur_df.groupby('sig_dur').mean()['time'].values[i]
+
+sigma_tau_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_tau_mean[i%10,int(i/10)] = double_tau_df.groupby('sig_tau').mean()['time'].values[i]
+
+ax = fig.subplot(gs[1,:], fontsize=24)
+ax.format(title='Original Method at Decadal Resolution', titlepad=15, xticks=[], yticks=[], ec='white', abc=False)
+
+ax5 = fig.subplot(gs[1,0], abc=True, abcloc='ul', number=5, fontsize=18)
+ax5.format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=tau[np.arange(10,110,step=20)], 
+             yminorticks=tau[np.arange(100,step=20)])
+dur = ax5.contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both')
+
+ax6 = fig.subplot(gs[1,1], abc=True, abcloc='ul', number=6, fontsize=18)
+ax6.format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=1000*GS_slope[np.arange(10,110,step=20)], 
+              yminorlocator=1000*GS_slope[np.arange(100,step=20)])
+GS = ax6.contourf(x=sigma[:10], y=1000*GS_slope[np.arange(100,step=10)], cmap=cmap1,
+                       z=sigma_GS_mean,levels=contour_levs, extend='both')
+
+ax7 = fig.subplot(gs[1,2], abc=True, abcloc='ul', number=7, fontsize=18)
+ax7.format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slope \n / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=np.abs(1000*GIS_slope[np.arange(10,110,step=20)]),
+              yminorlocator=0.3)
+slope = ax7.contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
+                       z=np.flip(sigma_GIS_mean,axis=0),levels=contour_levs, extend='both')
+
+ax8 = fig.subplot(gs[1,3], abc=True, abcloc='ul', number=8, fontsize=18)
+ax8.format(xlabel='Noise / Signal', ylabel='Transition Duration / Years',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=duration[np.arange(10,110,step=20)], yminorlocator=10)
+dur = ax8.contourf(x=sigma[:10], y=duration[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_dur_mean),levels=contour_levs, extend='both')
+
+
+
+#Extended Method, Annual Resolution
+
+for i in range(10000):
+    sigma[i] = 0.05 + 0.05 * (i%10)
+    tau[i] = 0.5 + 0.5 * int((i%100)/10)
+    GS_slope[i] = -1.8e-3 + 4e-4 * int((i%100)/10)
+    GIS_slope[i] = 0.0 - 3e-4 * int((i%100)/10)
+    duration[i] = 10.0 + 10.0 * int((i%100)/10)
+
+df = pd.read_pickle('Data/annual_synthetics/Extended_Method/double_GS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'GS_slope': GS_slope}
+double_GS_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/annual_synthetics/Extended_Method/double_GIS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'GIS_slope': GIS_slope}
+double_GIS_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/annual_synthetics/Extended_Method/double_dur_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'duration': duration}
+double_dur_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/annual_synthetics/Extended_Method/double_tau_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'tau': tau}
+double_tau_df = pd.DataFrame(data=d)
+
+double_GIS_df['sig_GIS'] = double_GIS_df['sigma'] + double_GIS_df['GIS_slope']
+double_GS_df['sig_GS'] = double_GS_df['sigma'] + double_GS_df['GS_slope']
+double_dur_df['sig_dur'] = double_dur_df['sigma'] + double_dur_df['duration']
+double_tau_df['sig_tau'] = double_tau_df['sigma'] + 10*double_tau_df['tau']
+
+sigma_GIS_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_GIS_mean[i%10,int(i/10)] = double_GIS_df.groupby('sig_GIS').mean()['time'].values[i]
+
+sigma_GS_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_GS_mean[i%10,int(i/10)] = double_GS_df.groupby('sig_GS').mean()['time'].values[i]
+
+sigma_dur_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_dur_mean[i%10,int(i/10)] = double_dur_df.groupby('sig_dur').mean()['time'].values[i]
+
+sigma_tau_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_tau_mean[i%10,int(i/10)] = double_tau_df.groupby('sig_tau').mean()['time'].values[i]
+
+ax = fig.subplot(gs[2,:], fontsize=24)
+ax.format(title='Extended Method at Annual Resolution', titlepad=15, xticks=[], yticks=[], ec='white', abc=False)
+
+ax9 = fig.subplot(gs[2,0], abc=True, abcloc='ul', number=9, fontsize=18)
+ax9.format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
+              xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)], yticks=tau[np.arange(10,110,step=20)], 
+              yminorticks=tau[np.arange(100,step=20)])
+dur = ax9.contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both')
+
+ax10 = fig.subplot(gs[2,1], abc=True, abcloc='ul', number=10, fontsize=18)
+ax10.format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)], yticks=1000*GS_slope[np.arange(10,110,step=20)], 
+              yminorlocator=1000*GS_slope[np.arange(100,step=20)])
+GS = ax10.contourf(x=sigma[:10], y=1000*GS_slope[np.arange(100,step=10)], cmap=cmap1,
+                       z=sigma_GS_mean,levels=contour_levs, extend='both')
+
+ax11 = fig.subplot(gs[2,2], abc=True, abcloc='ul', number=11, fontsize=18)
+ax11.format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slope \n / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)],
+              yticks=np.abs(1000*GIS_slope[np.arange(10,110,step=20)]),
+              yminorlocator=0.3)
+slope = ax11.contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
+                       z=np.flip(sigma_GIS_mean,axis=0),levels=contour_levs, extend='both')
+
+ax12 = fig.subplot(gs[2,3], abc=True, abcloc='ul', number=12, fontsize=18)
+ax12.format(xlabel='Noise / Signal', ylabel='Transition Duration / Years',
+             xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)],
+              yticks=duration[np.arange(10,110,step=20)], yminorlocator=10)
+dur = ax12.contourf(x=sigma[:10], y=duration[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_dur_mean),levels=contour_levs, extend='both')
+
+
+
+#Extended Method, Decadal Resolution
+sigma = np.empty(10000)
+tau = np.empty(10000)
+GS_slope = np.empty(10000)
+GIS_slope = np.empty(10000)
+duration = np.empty(10000)
+
+for i in range(10000):
+    sigma[i] = 0.02 + 0.02 * (i%10)
+    tau[i] = 3.0 + 3.0 * int((i%100)/10)
+    GS_slope[i] = -1.8e-3 + 4e-4 * int((i%100)/10)
+    GIS_slope[i] = 0.0 - 3e-4 * int((i%100)/10)
+    duration[i] = 10.0 + 10.0 * int((i%100)/10)
+
+df = pd.read_pickle('Data/decadal_synthetics/Extended_Method/double_GS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'GS_slope': GS_slope}
+double_GS_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/decadal_synthetics/Extended_Method/double_GIS_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'GIS_slope': GIS_slope}
+double_GIS_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/decadal_synthetics/Extended_Method/double_dur_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'duration': duration}
+double_dur_df = pd.DataFrame(data=d)
+
+df = pd.read_pickle('Data/decadal_synthetics/Extended_Method/double_tau_pickle')
+df = df.where(df['mean_time']>300,other=np.nan)
+df = df.where(df['mean_time']<450,other=np.nan)
+time = df['mean_time'] - 400
+d = {'time': time, 'sigma': sigma, 'tau': tau}
+double_tau_df = pd.DataFrame(data=d)
+
+double_GIS_df['sig_GIS'] = double_GIS_df['sigma'] + double_GIS_df['GIS_slope']
+double_GS_df['sig_GS'] = double_GS_df['sigma'] + double_GS_df['GS_slope']
+double_dur_df['sig_dur'] = double_dur_df['sigma'] + double_dur_df['duration']
+double_tau_df['sig_tau'] = double_tau_df['sigma'] + double_tau_df['tau']
+
+sigma_GIS_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_GIS_mean[i%10,int(i/10)] = double_GIS_df.groupby('sig_GIS').mean()['time'].values[i]
+
+sigma_GS_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_GS_mean[i%10,int(i/10)] = double_GS_df.groupby('sig_GS').mean()['time'].values[i]
+
+sigma_dur_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_dur_mean[i%10,int(i/10)] = double_dur_df.groupby('sig_dur').mean()['time'].values[i]
+
+sigma_tau_mean = np.empty((10,10))
+
+for i in range(100):
+    sigma_tau_mean[i%10,int(i/10)] = double_tau_df.groupby('sig_tau').mean()['time'].values[i]
+
+ax = fig.subplot(gs[3,:], fontsize=24)
+ax.format(title='Extended Method at Decadal Resolution', titlepad=15, xticks=[], yticks=[], ec='white', abc=False)
+
+ax13 = fig.subplot(gs[3,0], abc=True, abcloc='ul', number=13, fontsize=18)
+ax13.format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=tau[np.arange(10,110,step=20)], 
+             yminorticks=tau[np.arange(100,step=20)])
+dur = ax13.contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both')
+
+ax14 = fig.subplot(gs[3,1], abc=True, abcloc='ul', number=14, fontsize=18)
+ax14.format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=1000*GS_slope[np.arange(10,110,step=20)], 
+              yminorlocator=1000*GS_slope[np.arange(100,step=20)])
+GS = ax14.contourf(x=sigma[:10], y=1000*GS_slope[np.arange(100,step=10)], cmap=cmap1,
+                       z=sigma_GS_mean,levels=contour_levs, extend='both')
+
+ax15 = fig.subplot(gs[3,2], abc=True, abcloc='ul', number=15, fontsize=18)
+ax15.format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slope \n / $Kiloyears^{-1}$',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=np.abs(1000*GIS_slope[np.arange(10,110,step=20)]),
+              yminorlocator=0.3)
+slope = ax15.contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
+                       z=np.flip(sigma_GIS_mean,axis=0),levels=contour_levs, extend='both')
+
+ax16 = fig.subplot(gs[3,3], abc=True, abcloc='ul', number=16, fontsize=18)
+ax16.format(xlabel='Noise / Signal', ylabel='Transition Duration / Years',
+             xticks=sigma[np.arange(1,11,step=2)], xminorlocator=0.02, yticks=duration[np.arange(10,110,step=20)], yminorlocator=10)
+dur = ax16.contourf(x=sigma[:10], y=duration[np.arange(100,step=10)], cmap=cmap1,
+                       z=np.transpose(sigma_dur_mean),levels=contour_levs, extend='both')
+
+
+
+
+# Add shapes to decadal for CCSM4: sigma, tau, GS slope, GIS slope, duration
 tas = (0.06633234778696487, 13.649751415738818, 0.00016431508734689263, -0.0009404944834246113, 56.32925780771254)
 pre = (0.1542468176758728, 7.610589558843324, 0.0003347760370749247, -0.0012734065625610814, 69.84867995820262)
 ice = (0.06772528109764206, 13.522050331034816, 0.0001679453269451725, -0.0009241650626852406, 58.975578975895765)
@@ -409,14 +616,45 @@ markers = ('o', 'v', 's', '^', '*')
 labels=('Temperature', 'Precipitation', 'Sea Ice', 'AMOC', 'NAO')
 
 for i in range(5):
-    axs[4].scatter(var_sigma[i], var_tau[i], edgecolor='white', color='black', s=200, marker=markers[i], label=labels[i])
-    axs[5].scatter(var_sigma[i], var_GS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
-    axs[6].scatter(var_sigma[i], var_GIS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
-    axs[7].scatter(var_sigma[i], var_duration[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax5.scatter(var_sigma[i], var_tau[i], edgecolor='white', color='black', s=200, marker=markers[i], label=labels[i])
+    ax6.scatter(var_sigma[i], var_GS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax7.scatter(var_sigma[i], var_GIS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax8.scatter(var_sigma[i], var_duration[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax13.scatter(var_sigma[i], var_tau[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax14.scatter(var_sigma[i], var_GS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax15.scatter(var_sigma[i], var_GIS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax16.scatter(var_sigma[i], var_duration[i], edgecolor='white', color='black', s=200, marker=markers[i])
 
 
-fig.legend(loc='bottom',fontsize=18,ncols=5, mode='expand')
+#Add shapes to Annual for NGRIP: sigma, alpha, GS_slope, GIS_slope, Duration
+dO18 = (0.35512853369656316, 0.3175718070302185, 0.0004178923548203365, -0.0005940306849159514, 64.40223930765913)
+Ca = (0.17855488347920445, 0.5290282552023026, 0.0008834874030537089, -0.0004044796230253164, 52.225378632514996)
+Na = (0.40684912829722486, 0.2865799122908226, 0.0004588594005226332, -0.00021193378517724617, 70.11026366895894)
+Thickness = (0.3690816188789908, 0.08363809288258092, 0.000822067869923353, -0.0007619642437050181, 58.70786182623836)
 
+var_sigma = (dO18[0],Ca[0],Na[0],Thickness[0])
+var_tau = (-5.0/np.log(dO18[1]),-2.0/np.log(Ca[1]),-2.0/np.log(Na[1]),-2.0/np.log(Thickness[1]))
+var_GS_slope = 1000* np.array((dO18[2],Ca[2],Na[2],Thickness[2]))
+var_GIS_slope = np.abs(1000* np.array((dO18[3],Ca[3],Na[3],Thickness[3])))
+var_duration = (dO18[4],Ca[4],Na[4],Thickness[4])
+markers = ('<', '>', 'P', 'D',)
+labels=('$\delta ^{18}O$', 'Ca$^{2+}$', 'Na$^+$', 'Annual Layer Thickness')
+
+for i in range(4):
+    ax1.scatter(var_sigma[i], var_tau[i], edgecolor='white', color='black', s=200, marker=markers[i], label=labels[i])
+    ax2.scatter(var_sigma[i], var_GS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax3.scatter(var_sigma[i], var_GIS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax4.scatter(var_sigma[i], var_duration[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax9.scatter(var_sigma[i], var_tau[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax10.scatter(var_sigma[i], var_GS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax11.scatter(var_sigma[i], var_GIS_slope[i], edgecolor='white', color='black', s=200, marker=markers[i])
+    ax12.scatter(var_sigma[i], var_duration[i], edgecolor='white', color='black', s=200, marker=markers[i])
+
+colorbar = fig.colorbar(slope, loc='bottom')
+colorbar.ax.tick_params(labelsize=24)
+colorbar.ax.set_title('Bias / Years', fontsize=24)
+
+fig.legend(loc='bottom',fontsize=20,ncols=9)
 fig.save('Figures/Figure_3')
 
 
@@ -537,10 +775,11 @@ for m, var in enumerate(vars):
     bias = np.mean(samples.flatten())
     corr_lags[m,:] = lags[m,:] - bias
 
-d = {'Na': corr_lags[0,:], '$\delta ^{18} O$': corr_lags[1,:], 'Thickness': corr_lags[2,:]}
+d = {'Na$^+$': corr_lags[0,:], '$\delta ^{18} O$': corr_lags[1,:], 'Annual Layer Thickness': corr_lags[2,:]}
 corr_lags_df = pd.DataFrame(data=d)
 
-ax.violin(lags_df, cycle=True)
+fig, ax = pplt.subplot(figsize=(8,4),ylabel='Sample Mean Time Lag / Years',fontsize=14,)
+ax.violin(lags_df, cycle=pplt.Cycle('viridis',3))
 
 ax.violinplot(corr_lags_df, cycle=False,
                       facecolor=((1, 1, 1, 0),(1, 1, 1, 0),(1, 1, 1, 0)), alpha=np.array((0.99,0.99,0.99)))

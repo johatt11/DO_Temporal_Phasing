@@ -1,9 +1,15 @@
 """
-All code in this file was published in conjunction with the
+All code in this file was first published in conjunction with the
 research article Erhardt, T. et al. Decadal-scale progression of
 the onset of Dansgaard-Oeschger warming events. Clim. Past 15,
 811–825 (2019) and is available from 
 https://github.com/terhardt/DO-progression (last access: 28.06.22)
+------------------------------------------------------------------
+
+This version has been slightly adapted and is published with the
+article Slattery, J. et al. The Temporal Phasing of Rapid Dansgaard
+–Oeschger Warming Events Cannot Be Reliably Determined, code 
+available from https://github.com/johatt11/DO_Temporal_Phasing
 ------------------------------------------------------------------
 
 Model and fitting related functions
@@ -64,7 +70,7 @@ def lnpost(theta, t, yobs):
     Parameter
     ---------
     theta : np.ndarray
-        Transformed model paramters (t0, ln(dt), y0, dy, ln(sigma), ln(tau))
+        Transformed model parameters (t0, ln(dt), y0, dy, ln(sigma), ln(tau))
         where the first four are for the linear ramp and the two last parameters
         are the standard deviation and autocorrelation time of the AR(1) noise
         model
@@ -173,7 +179,7 @@ def fit_rmse(t, y, p0=None):
         p0 = (float(t[sort][int(len(t)/2)]), np.log(np.diff(t)[0]*len(t)/10.0), np.mean(y[sort][:10]),
               np.mean(y[sort][-10:]) - np.mean(y[sort][:10]))
     p, *_, flag = fmin(lambda p: rmse(linear_ramp_flat(t[sort], p[0], np.exp(p[1]),
-                                                  p[2], p[3]), y), #changed y[sort] to y 03/11/22
+                                                  p[2], p[3]), y),
                        p0, ftol=1e-5, xtol=1e-5, maxfun=1e5, maxiter=1e5,
                        disp=False, full_output=True)
     if flag != 0:

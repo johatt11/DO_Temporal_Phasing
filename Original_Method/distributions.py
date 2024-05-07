@@ -6,6 +6,11 @@ the onset of Dansgaard-Oeschger warming events. Clim. Past 15,
 https://github.com/terhardt/DO-progression (last access: 28.06.22)
 ------------------------------------------------------------------
 
+This version has been slightly adapted and is published with the
+article Slattery, J. et al. The Temporal Phasing of Rapid Dansgaard
+–Oeschger Warming Events Cannot Be Reliably Determined, code 
+available from https://github.com/johatt11/DO_Temporal_Phasing
+------------------------------------------------------------------
 Distribution and likelyhood functions """
 
 import numpy as np
@@ -56,14 +61,14 @@ def ar1_like(x, alpha, sigma=1.0):
     Returns
     -------
     lnp : array
-        Log-likelyhood of the observations given the parameters of the
+        Log-likelihood of the observations given the parameters of the
         AR(1) process \ln p({x}|k, sigma)
     """
+    sigma_e = np.sqrt(sigma ** 2 * (1 - alpha ** 2))
     xim1 = x[:-1]
     xi   = x[1:]
-    lnp = normal_like(xi, alpha * xim1, sigma=sigma)
-    sigma_lim = np.sqrt(sigma**2 * (1 - alpha**2)) # changed / to * to match ar1ue_like 03/11
-    lnp += normal_like(x[0], mu=0.0, sigma=sigma_lim)
+    lnp = normal_like(xi, alpha * xim1, sigma=sigma_e)
+    lnp += normal_like(x[0], mu=0.0, sigma=sigma)
     return lnp
 
 

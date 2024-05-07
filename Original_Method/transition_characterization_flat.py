@@ -5,8 +5,15 @@ et al. Decadal-scale progression of the onset of
 Dansgaard-Oeschger warming events. Clim. Past 15, 811–825 (2019)'
 and which is available from
 https://github.com/terhardt/DO-progression (last access: 28.06.22)
+------------------------------------------------------------------
 
-While the original code is tailored to the analysis of sepecific
+This version has been slightly adapted and is published with the
+article Slattery, J. et al. The Temporal Phasing of Rapid Dansgaard
+–Oeschger Warming Events Cannot Be Reliably Determined, code 
+available from https://github.com/johatt11/DO_Temporal_Phasing
+------------------------------------------------------------------
+
+Whilst the original code is tailored to the analysis of specific
 time series, here we provide an interface which allows to use the
 algorithm on any time series which comprises an abrupt change of
 the level of values.
@@ -56,7 +63,7 @@ and p(ypred_0 = yobs_0) = 1/sqrt(2 * pi * sigma_eff)
                                exp(-(1/2) * (yobs)² / sigma_eff²)
 
 
-the PRIORS for the paramters are defined in the file model.py as
+the PRIORS for the parameters are defined in the file model.py as
 part of the function lnpost
 
 -----------------------------------------------------------------
@@ -78,10 +85,11 @@ lnp += 1.0
 uniform prior 
 
 # step height dy                              
-lnp += normal_like(dy, 0.0, 5.0)
+lnp += 1.0        
+uniform prior 
 
 # autocorrelation time tau
-lnp += gamma_like(tau, 2.5, 0.15) + np.log(tau) 
+lnp += gamma_like(tau, 1.5, 0.05) + np.log(tau) 
 gamma distribution weighted with a linear function 
 
 # variance sigma
@@ -91,10 +99,7 @@ no prior defined, this is equivalent to a uniform prior.
 
 import numpy as np
 import pandas as pd
-import joblib as jl
 import emcee
-import sys
-sys.path.append('../../')
 from distributions import sample_ar1
 from model_flat import fit_mcmc, linear_ramp_flat, fit_rmse
 
@@ -159,10 +164,9 @@ def find_trans_time(time, obs, rw=None):
     return time[np.argmax(score)+rw], score
 
 
-def estimate_transition_flat(time, obs, ptrans=None, pnoise=None, nwalkers=60, nsamples=60000, nthin=600, nburnin=2000, calctau=False):
+def estimate_transition_flat(time, obs, ptrans=None, pnoise=None, nwalkers=60, nsamples=60000, nthin=600, nburnin=2000):
     '''create an MCMC sample from the posterior probability joint
-    distribution of the model parameters. noise paraemters are 
-    omitted in the output. 
+    distribution of the model parameters.
 
     input
     -----
@@ -181,21 +185,24 @@ def estimate_transition_flat(time, obs, ptrans=None, pnoise=None, nwalkers=60, n
              guarantees that only truly uncorrelated samples 
              survive.
     nburnin := number of initial samples before samples start being stored.
-    calctau := Boolean. If True, calculate tau, if False, return np.nan
 
     output
     ------ 
 
     out [pandas DataFrame] := the output pandas DataFrame 
-    comprises 4 columns ['t0', 'dt', 'y0', 'dy'] each of which 
-    represent one of the transition parameters. Each row of the 
-    DataFrame contains one sample from the joint posterior 
-    distribution of the six model paramters, where 'tau' and 
-    'sigma' are omitted. There are in total 
+    comprises 6 columns ['t0', 'dt', 'y0', 'dy', 'tau', 'sigma'] 
+    each of which represent one of the transition or noise 
+    parameters. Each row of the DataFrame contains one sample
+    from the joint posterior distribution of the six model 
+    parameters. There are in total 
     ntotal = nwalkers * nsamples / nthin 
     rows / samples comprised in the output.
 
-    tau := Integrated autocorrelation time
+    int_tau := Integrated autocorrelation time.
+    If nsamples < 50 * int_tau then this will raise an error
+    and you must repeat with a larger nsamples.
+
+    accept_frac := Mean acceptance fraction.
     
     Caution: with the default settings, the MCMC sampler may take 
     up an hour to run on a personal computer. 
@@ -235,7 +242,7 @@ def estimate_transition_flat(time, obs, ptrans=None, pnoise=None, nwalkers=60, n
         mask2 = time > t0 + 0.5*dt
         # sigma is computed as the mean of obs std before and
         # after the estimated transition. Note that this sigma
-        # denotes the variance of the AR(1) process, not the
+        # denotes the standard deviation of the AR(1) process, not the
         # amplitude of the noise. The amplitude of the gaussian
         # noise which is added in every time step of the AR(1)
         # process is given by: 
@@ -294,11 +301,9 @@ def estimate_transition_flat(time, obs, ptrans=None, pnoise=None, nwalkers=60, n
 
     trace[:,0] = trace[:,0] + t0
 
-    out = pd.DataFrame(trace[:,:4], columns = ['t0', 'dt', 'y0', 'dy'])
+    out = pd.DataFrame(trace, columns = ['t0', 'dt', 'y0', 'dy', 'tau', 'sigma'])
 
-    if calctau == True:
-        int_tau = np.array(sampler.get_autocorr_time(quiet=True))
-    else:
-        int_tau = np.nan
+    int_tau = np.array(sampler.get_autocorr_time())
+    accept_frac = np.mean(sampler.acceptance_fraction)
                             
-    return out, int_tau
+    return out, int_tau, accept_frac
