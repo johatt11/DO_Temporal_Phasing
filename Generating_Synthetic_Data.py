@@ -8,6 +8,8 @@ transitions used for the analysis in that publication
 in this file, but instead we give an
 overview of how this was done.'''
 
+import sys
+import os
 import numpy as np
 sys.path.append(os.path.join(sys.path[0],'Extended_Method'))
 from model import linear_ramp

@@ -200,7 +200,7 @@ fig.save('Figures/Figure_2')
 
 gs = pplt.GridSpec(nrows=4, ncols=4, hpad=4)
 fig = pplt.figure(refheight=4, share=False, fontsize=18)
-contour_levs = [11,7,4,2,1,0,-1,-2,-4,-7,-11]
+contour_levs = [-11,-7,-4,-2,-1,-0,1,2,4,7,11]
 cmap1 = pplt.Colormap('RdBu_r')
 
 
@@ -278,7 +278,7 @@ ax1.format(xlabel='Noise / Signal', ylabel='Autocorrelation Time / Years',
               xticks=sigma[np.arange(1,11,step=2)], xminorticks=sigma[np.arange(10,step=2)], yticks=tau[np.arange(10,110,step=20)], 
               yminorticks=tau[np.arange(100,step=20)])
 dur = ax1.contourf(x=sigma[:10], y=tau[np.arange(100,step=10)], cmap=cmap1,
-                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both', inbounds=False)
+                       z=np.transpose(sigma_tau_mean),levels=contour_levs, extend='both')
 
 ax2 = fig.subplot(gs[0,1], abc=True, abcloc='ul', number=2, fontsize=18)
 ax2.format(xlabel='Noise / Signal', ylabel='Greenland Stadial Slope / $Kiloyears^{-1}$',
@@ -340,7 +340,7 @@ time = df['mean_time'] - 400
 d = {'time': time, 'sigma': sigma, 'duration': duration}
 double_dur_df = pd.DataFrame(data=d)
 
-df = pd.read_pickle('~/Documents/Revised_Phasing/DEC_sensitivity/Data_Original/double_tau_pickle')
+df = pd.read_pickle('Data/decadal_synthetics/Original_Method/double_tau_pickle')
 df = df.where(df['mean_time']>300,other=np.nan)
 df = df.where(df['mean_time']<450,other=np.nan)
 time = df['mean_time'] - 400
@@ -778,7 +778,7 @@ for m, var in enumerate(vars):
 d = {'Na$^+$': corr_lags[0,:], '$\delta ^{18} O$': corr_lags[1,:], 'Annual Layer Thickness': corr_lags[2,:]}
 corr_lags_df = pd.DataFrame(data=d)
 
-fig, ax = pplt.subplot(figsize=(8,4),ylabel='Sample Mean Time Lag / Years',fontsize=14,)
+fig, ax = pplt.subplots(figsize=(8,4),ylabel='Sample Mean Time Lag / Years',fontsize=14,)
 ax.violin(lags_df, cycle=pplt.Cycle('viridis',3))
 
 ax.violinplot(corr_lags_df, cycle=False,

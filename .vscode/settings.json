@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./Extended_Method",
+        "./Original_Method"
+    ]
+}

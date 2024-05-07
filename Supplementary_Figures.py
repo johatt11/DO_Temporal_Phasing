@@ -158,7 +158,7 @@ d = {'Original': df['onset time'][25:], 'Extended': df['onset time'][:25]}
 df_reduced = pd.DataFrame(data=d)
 
 
-fig, ax = pplt.subplot(figsize=(5,4), fontsize=16)
+fig, ax = pplt.subplots(figsize=(5,4), fontsize=16)
 ax.format(ylabel='Posterior Mean Onset Time / Years', xlabel='Implementation of Ramp Fitting Method')
 ax.scatter(df_reduced, mean=True, boxstd=True, barstd=True)
 fig.save('Supplementary_Figures/Figure_A2')
@@ -383,7 +383,7 @@ transition onset time.'''
 
 gs = pplt.GridSpec(nrows=4, ncols=4, hpad=4)
 fig = pplt.figure(refheight=4, share=False, fontsize=18)
-contour_levs = [11,7,4,2,1,0,-1,-2,-4,-7,-11]
+contour_levs = [-11,-7,-4,-2,-1,0,1,2,4,7,11]
 cmap1 = pplt.Colormap('RdBu_r')
 
 #Original Method, Annual Resolution
