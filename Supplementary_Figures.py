@@ -2,10 +2,127 @@ import numpy as np
 import pandas as pd
 import proplot as pplt
 import os
+from scipy import stats
+from scipy import fft
 from scipy.stats import gaussian_kde
 import sys
+rng = np.random.default_rng(5823467)
 
-'''Create Fig. A1, showing how the uncertainty
+'''Create Fig. A1, which shows that seven of the
+sixteen considered transitions in NGRIP Ca2+ 
+have a significant positive slope in the
+preceding stadial.'''
+
+aerosol_highres_df = pd.read_csv('Data/NGRIP/Erhardt_NGRIP_aerosol_highres.tab', header = 18, sep='\t', engine='python')
+events = aerosol_highres_df['Ageprof dat des'].unique()
+Erhardt_NGRIP_timing = pd.read_csv('Data/NGRIP/Erhardt_NGRIP_timing.csv',
+                                    header = 8, sep=',').dropna()[['par','Age','Na.1','Ca.1','lt.1','d18O.1']]
+Erhardt_NGRIP_timing.rename(columns={'par': 'par', 'Age': 'Age', 'Na.1': 'Na', 'Ca.1': 'Ca', 'lt.1': 'Thickness', 'd18O.1': 'dO18'},
+                             inplace=True)
+
+vars = ('Na', 'Thickness', 'Ca', 'dO18')
+
+k = 0
+slopes = np.empty((4,16))
+pvals = np.empty((4,16))
+for i in Erhardt_NGRIP_timing.index:
+    for j, variable in enumerate(vars):
+        event = Erhardt_NGRIP_timing['par'][i]
+        NGRIP_data = pd.read_pickle('Data/NGRIP/'+str(variable)+'/'+str(event))
+        if str(variable) == 'dO18':
+            label = 'δ18O H2O [‰ SMOW]'
+            obs_data = np.array(NGRIP_data[str(label)].values)
+            obs_data = np.flip(obs_data)
+            time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        elif str(variable) == 'Ca':
+            label = 'Ca2+ [ng/g]'
+            obs_data = np.log(np.array(NGRIP_data[str(label)].values))
+            obs_data = np.flip(obs_data)
+            time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        elif str(variable) == 'Na':
+            label = 'Na+ [ng/g]'
+            obs_data = np.log(np.array(NGRIP_data[str(label)].values))
+            obs_data = np.flip(obs_data)
+            time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        elif str(variable) == 'Thickness':
+            label = 'Thickness [m]'
+            obs_data = np.log(np.array(NGRIP_data[str(label)].values))
+            obs_data = np.flip(obs_data)
+            time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        cutoff_time = -Erhardt_NGRIP_timing['Age'][i] + float(Erhardt_NGRIP_timing[str(variable)][i])
+        time = time[time<cutoff_time]
+        obs_data = obs_data[:len(time)]
+        traces = pd.read_pickle('Data/NGRIP/'+str(variable)+'/traces/'+str(event))
+        slopes[j,k] = stats.linregress(time,obs_data/np.mean(traces['dy']),alternative='greater').slope
+        obs_data_fft = fft.rfft(obs_data, len(obs_data))
+        slope_dist = np.empty(10000)
+        for l in range(10000):
+            random_phases = rng.uniform(low=0.0, high=2*np.pi, size = len(obs_data_fft))
+            randomised_fft = np.abs(obs_data_fft) * np.exp(1j * random_phases)
+            reconstructed_data = fft.irfft(randomised_fft, len(obs_data))
+            slope_dist[l] = stats.linregress(time,reconstructed_data /np.mean(traces['dy']),alternative='greater').slope
+        pvals[j,k] = np.sum(slope_dist>slopes[j,k])/10000
+    k += 1
+
+variable = 'Ca'
+fig, axs = pplt.subplots(
+        nrows=4, ncols=4, refwidth=1.8, panelpad=0.8,
+        share=False,
+    )
+
+j = 0
+for i in Erhardt_NGRIP_timing.index:
+    event = Erhardt_NGRIP_timing['par'][i]
+    NGRIP_data = pd.read_pickle('Data/NGRIP/'+str(variable)+'/'+str(event))
+    if str(variable) == 'dO18':
+        label = 'δ18O H2O [‰ SMOW]'
+        obs_data = np.array(NGRIP_data[str(label)].values)
+        obs_data = np.flip(obs_data)
+        time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        Y_ax_title = '$\delta ^{18} O$ / ‰'
+    elif str(variable) == 'Ca':
+        label = 'Ca2+ [ng/g]'
+        obs_data = np.log(np.array(NGRIP_data[str(label)].values))
+        obs_data = np.flip(obs_data)
+        time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        Y_ax_title = 'ln(Ca2+ [ng/g])'
+    elif str(variable) == 'Na':
+        label = 'Na+ [ng/g]'
+        obs_data = np.log(np.array(NGRIP_data[str(label)].values))
+        obs_data = np.flip(obs_data)
+        time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        Y_ax_title = 'ln(Na+ [ng/g])'
+    elif str(variable) == 'Thickness':
+        label = 'Thickness [m]'
+        obs_data = np.log(np.array(NGRIP_data[str(label)].values))
+        obs_data = np.flip(obs_data)
+        time = -1000 * np.flip(np.array(NGRIP_data['Age [ka BP]'].values))
+        Y_ax_title = 'ln(Thickness [m])'
+
+    
+    
+    fig.format(fontsize = 14, xlabel = 'Kiloyears Before 1950', ylabel=Y_ax_title)
+    ax = axs[j]
+    
+    cutoff_time = -Erhardt_NGRIP_timing['Age'][i] + float(Erhardt_NGRIP_timing[str(variable)][i])
+    time = time[time<cutoff_time]
+    obs_data = obs_data[:len(time)]
+    reduced_time = np.abs(time)/1000
+    result = stats.linregress(reduced_time,obs_data)
+
+    ax.plot(reduced_time, obs_data, lw=0.5)
+    ax.format(title=event)
+    fit = result.intercept + reduced_time*result.slope
+    if pvals[2,j] < 0.05:
+        ax.plot(reduced_time, fit, color='k', lw=1.2, zorder=12)
+    else:
+        ax.plot(reduced_time, fit, color='k', lw=1.2, ls='--', zorder=12)
+
+    j += 1
+
+fig.save('Supplementary_Figures/Figure_A1')
+
+'''Create Fig. A2, showing how the uncertainty
 depends on noise and slope parameters for both
 implementations.'''
 
@@ -115,10 +232,10 @@ ax4.format(xlabel='Noise / Signal', ylabel='Absolute Greenland Interstadial Slop
 GIS = ax4.contourf(x=sigma[:10], y=np.abs(1000*GIS_slope[np.arange(100,step=10)]), cmap=cmap1,
                        z=np.flip(sigma_GIS_mean,axis=0),extend='both',levels=levels)
 
-fig.save('Supplementary_Figures/Figure_A1')
+fig.save('Supplementary_Figures/Figure_A2')
 
 
-'''Create Fig. A2, showing the reduced sensitivity to
+'''Create Fig. A3, showing the reduced sensitivity to
 the choice of window when using the extended method'''
 '''We also look at this question more systematically for the CCSM4 200ppm AMOC 1st transition.'''
 
@@ -161,10 +278,10 @@ df_reduced = pd.DataFrame(data=d)
 fig, ax = pplt.subplots(figsize=(5,4), fontsize=16)
 ax.format(ylabel='Posterior Mean Onset Time / Years', xlabel='Implementation of Ramp Fitting Method')
 ax.scatter(df_reduced, mean=True, boxstd=True, barstd=True)
-fig.save('Supplementary_Figures/Figure_A2')
+fig.save('Supplementary_Figures/Figure_A3')
 
 
-'''Create Fig. A3, which shows low noise benchmarks.'''
+'''Create Fig. A4, which shows low noise benchmarks.'''
 
 tau = np.empty(1000)
 for i in range(1000):
@@ -216,7 +333,7 @@ axs[3].scatter(duration[:10], plotting_df.groupby('true_dur').mean()['sampled_du
 axs[3].plot(duration[:10],duration[:10],color='black',ls='--')
 axs[3].format(xlabel='True Duration / Years', ylabel = 'Estimated Duration / Years')
 
-fig.save('Supplementary_Figures/Figure_A3')
+fig.save('Supplementary_Figures/Figure_A4')
 
 
 '''Create Fig. C1, which shows the bias when
