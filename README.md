@@ -1,5 +1,5 @@
 # DO_Temporal_Phasing
-Code published in association with Slattery et al. (2023)
+Code published in association with Slattery et al. (2024)
 
 The code for the original implementation of the Bayesian ramp fitting method by Erhardt et al (2019, https://doi.org/10.5194/cp-15-811-2019)
 is contained in the folder Original_Method.
